@@ -17,11 +17,11 @@ app.post("/webhook", async (req, res) => {
   try {
     console.log("BODY:", req.body);
 
-    const email = req.body.email;
-    const name = req.body.name;
-    const service = req.body.service;
-    const start = req.body.start;
-    const end = req.body.end;
+    const email = req.body.customer_email || req.body.email;
+    const name = req.body.customer_name || req.body.name;
+    const service = req.body.service_name || req.body.service || "Scheduled Service";
+    const start = req.body.start_time || req.body.start;
+    const end = req.body.end_time || req.body.end;
 
     if (!email) {
       return res.status(400).send("Missing email");
