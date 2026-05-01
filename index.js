@@ -14,6 +14,9 @@ app.get("/", (req, res) => {
   res.send("Backend is working");
 });
 
+app.get("/webhook", (req, res) => {
+  res.send("Webhook endpoint is ready. Send POST requests here.");
+});
 app.post("/webhook", async (req, res) => {
   try {
     console.log("BODY:", req.body);
