@@ -2,7 +2,6 @@ const express = require("express");
 const { createClient } = require("@supabase/supabase-js");
 
 const app = express();
-
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -15,59 +14,24 @@ app.get("/", (req, res) => {
   res.send("Backend is working");
 });
 
+function cleanDate(value) {
+  if (!value) return null;
+  const date = new Date(value);
+  if (isNaN(date.getTime())) return null;
+  return date.toISOString();
+}
+
 app.post("/webhook", async (req, res) => {
   try {
-    console.log("FULL BODY:", JSON.stringify(req.body, null, 2));
+    console.log("BODY:", JSON.stringify(req.body, null, 2));
 
-    const body = req.body || {};
-    const data = body.data || {};
-    const payload = body.payload || {};
-
-    const email =
-      body.customer_email ||
-      body.email ||
-      data.customer_email ||
-      data.email ||
-      payload.email ||
-      payload.invitee?.email ||
-      "";
-
-    const name =
-      body.customer_name ||
-      body.name ||
-      data.customer_name ||
-      data.name ||
-      payload.name ||
-      payload.invitee?.name ||
-      "";
-
-    const service =
-      body.service_name ||
-      body.service ||
-      data.service_name ||
-      data.service ||
-      payload.event_type?.name ||
-      payload.scheduled_event?.name ||
-      "Scheduled Service";
-
-    const start =
-      body.start_time ||
-      body.start ||
-      data.start_time ||
-      data.start ||
-      payload.scheduled_event?.start_time ||
-      null;
-
-    const end =
-      body.end_time ||
-      body.end ||
-      data.end_time ||
-      data.end ||
-      payload.scheduled_event?.end_time ||
-      null;
+    const email = req.body.customer_email || req.body.email || "";
+    const name = req.body.customer_name || req.body.name || "";
+    const service = req.body.service_name || req.body.service || "Scheduled Service";
+    const start = cleanDate(req.body.start_time || req.body.start);
+    const end = cleanDate(req.body.end_time || req.body.end);
 
     if (!email) {
-      console.log("NO EMAIL FOUND. BODY WAS:", JSON.stringify(req.body, null, 2));
       return res.status(400).send("Missing email");
     }
 
@@ -84,13 +48,13 @@ app.post("/webhook", async (req, res) => {
 
     if (error) {
       console.error("SUPABASE ERROR:", error);
-      return res.status(500).send("Database error");
+      return res.status(500).send(error.message);
     }
 
     return res.status(200).send("Saved");
   } catch (err) {
     console.error("SERVER ERROR:", err);
-    return res.status(500).send("Server error");
+    return res.status(500).send(err.message);
   }
 });
 
