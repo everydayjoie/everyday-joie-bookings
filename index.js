@@ -4,42 +4,49 @@ const { createClient } = require("@supabase/supabase-js");
 const app = express();
 app.use(express.json());
 
-// Connect to Supabase
 const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_ANON_KEY
 );
 
-// Test route
 app.get("/", (req, res) => {
   res.send("Backend is working");
 });
 
-// Calendly webhook
 app.post("/webhook", async (req, res) => {
   try {
-    const payload = req.body.payload;
+    console.log("BODY:", req.body);
 
-    if (!payload) return res.sendStatus(400);
+    const email = req.body.email;
+    const name = req.body.name;
+    const service = req.body.service;
+    const start = req.body.start;
+    const end = req.body.end;
 
-    await supabase.from("appointments").insert([
+    if (!email) {
+      return res.status(400).send("Missing email");
+    }
+
+    const { error } = await supabase.from("appointments").insert([
       {
-        customer_email: payload.email,
-        customer_name: payload.name,
-        service_name: payload.event_type?.name || "Service",
-        start_time: payload.scheduled_event?.start_time,
-        end_time: payload.scheduled_event?.end_time,
-        status: "confirmed",
-        reschedule_url: payload.reschedule_url,
-        cancel_url: payload.cancel_url
+        customer_email: email,
+        customer_name: name,
+        service_name: service,
+        start_time: start,
+        end_time: end,
+        status: "confirmed"
       }
     ]);
 
-    console.log("Saved appointment");
-    res.sendStatus(200);
+    if (error) {
+      console.error("DB ERROR:", error);
+      return res.status(500).send("Database error");
+    }
+
+    res.status(200).send("Saved");
   } catch (err) {
-    console.error(err);
-    res.sendStatus(500);
+    console.error("SERVER ERROR:", err);
+    res.status(500).send("Server error");
   }
 });
 
